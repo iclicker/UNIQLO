@@ -19,6 +19,10 @@ NUM_CHANNELS  = 3
 BATCH_SIZE = 100
 TEST_BATCH_SIZE = 100
 
+def ratio_fn():
+    ratio = list(np.ones(NUM_CLASSES)*(1/NUM_CLASSES))
+    return ratio
+
 def encode_label(label):
   return int(label)
 
@@ -75,19 +79,27 @@ def input():
     #train_image = tf.cast(train_image, tf.float32)
     train_label = train_input_queue[1]
     
-
-    
     # define tensor shape
     train_image.set_shape([IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS])
     
     
+    '''
     # collect batches of images before processing
     train_image_batch, train_label_batch = tf.train.batch(
                                     [train_image, train_label],
                                     batch_size=BATCH_SIZE
                                     #,num_threads=1
                                     )
-    
+    '''
+    # collect stratified sample and create batches
+    target_probs = ratio_fn()
+    [train_image_batch], train_label_batch = tf.contrib.training.stratified_sample(
+                                    [train_image],
+                                    train_label,
+                                    target_probs=target_probs,
+                                    batch_size=BATCH_SIZE ,
+                                    queue_capacity=100
+                                    )
     
     return train_image_batch, train_label_batch
 
